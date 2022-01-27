@@ -1,0 +1,109 @@
+#!/usr/bin/python3
+#	padding_or_cli - PKCS#7 padding oracle command line interface
+#	Copyright (C) 2022-2022 Johannes Bauer
+#
+#	This file is part of padding_or_cli.
+#
+#	padding_or_cli is free software; you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation; this program is ONLY licensed under
+#	version 3 of the License, later versions are explicitly excluded.
+#
+#	padding_or_cli is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#
+#	You should have received a copy of the GNU General Public License
+#	along with padding_or_cli; if not, write to the Free Software
+#	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+#	Johannes Bauer <JohannesBauer@gmx.de>
+
+import sys
+import itertools
+import cryptography.hazmat.backends
+import cryptography.hazmat.primitives.ciphers.algorithms
+import cryptography.hazmat.primitives.ciphers.modes
+import cryptography.hazmat.primitives.padding
+from FriendlyArgumentParser import FriendlyArgumentParser
+
+parser = FriendlyArgumentParser(description = "PKCS#7 padding oracle commandl line interface.")
+parser.add_argument("-K", "--key", metavar = "key", default = "00000000000000000000000000000000", help = "AES-128 key to assume. Must be a hex-encoded 16 byte value. Defaults to %(default)s.")
+parser.add_argument("-C", "--ciphertext", metavar = "key", default = "560c911fa8cfd3fac3bb4d9f97d03464", help = "Ciphertext to assume. Must be a hex-encoded 16 byte value. Defaults to %(default)s.")
+parser.add_argument("-v", "--verbose", action = "count", default = 0, help = "Increases verbosity. Can be specified multiple times to increase.")
+parser.add_argument("qblock", help = "Hex-encoded preceding block Q. Can use the 'x' character to indicate a byte that should be brute forced.")
+args = parser.parse_args(sys.argv[1:])
+
+class PaddingOracleCLI():
+	def __init__(self, args):
+		self._args = args
+		self._key = bytes.fromhex(self._args.key)
+
+		self._invalid = 0
+		self._valid = 0
+		cipher = cryptography.hazmat.primitives.ciphers.Cipher(cryptography.hazmat.primitives.ciphers.algorithms.AES(self._key), cryptography.hazmat.primitives.ciphers.modes.ECB())
+		decryptor = cipher.decryptor()
+		ciphertext = bytes.fromhex(self._args.ciphertext)
+		self._plaintext = decryptor.update(ciphertext) + decryptor.finalize()
+		if self._args.verbose >= 3:
+			print("Key       : %s" % (self._hex(self._key)))
+			print("Ciphertext: %s" % (self._hex(ciphertext)))
+			print("Plaintext : %s" % (self._hex(self._plaintext)))
+
+	@staticmethod
+	def _hex(bval):
+		return " ".join("%02x" % (c) for c in bval)
+
+	@staticmethod
+	def _xor(a, b):
+		return bytes(x ^ y for (x, y) in zip(a, b))
+
+	def _unpad_q_xor_p(self, qblock):
+		pt = self._xor(qblock, self._plaintext)
+		padder = cryptography.hazmat.primitives.padding.PKCS7(128).unpadder()
+		padder.update(pt)
+		try:
+			padder.finalize()
+		except ValueError:
+			# PKCS#7 padding error
+			return (False, pt)
+		return (True, pt)
+
+	def _try_q(self, qblock):
+		if len(qblock) != 16:
+			raise ValueError("Q block must be 16 bytes long (was %s)" % (self._hex(qblock)))
+		assert(len(qblock) == 16)
+		(padding_works, p) = self._unpad_q_xor_p(qblock)
+		if padding_works:
+			print("Successful padding at Q: %s" % (self._hex(qblock)))
+			print("                  Q ^ P: %s" % (self._hex(p)))
+			if self._args.verbose >= 1:
+				print("                   D(C): %s" % (self._hex(self._xor(p, qblock))))
+			print()
+			self._valid += 1
+		else:
+			if self._args.verbose >= 2:
+				print("Invalid padding at Q: %s" % (self._hex(qblock)))
+				print("               Q ^ P: %s" % (self._hex(p)))
+				print()
+			self._invalid += 1
+
+	def run(self):
+		# First, parse the ciphertext block for occurrences of 'x'
+		bf_count = self._args.qblock.count("x")
+		if bf_count == 0:
+			# This is the raw ciphertext
+			self._try_q(bytes.fromhex(args.qblock))
+		else:
+			for bf_subs in itertools.product("0123456789abcdef", repeat = bf_count):
+				hex_str = args.qblock
+				for subvalue in bf_subs:
+					hex_str = hex_str.replace("x", subvalue, 1)
+				qblock = bytes.fromhex(hex_str)
+				self._try_q(qblock)
+
+		print("Found %d valid padding(s) and %d invalid padding(s)." % (self._valid, self._invalid))
+
+poc = PaddingOracleCLI(args)
+poc.run()
