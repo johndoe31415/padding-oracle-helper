@@ -65,7 +65,11 @@ Found 1 valid padding(s) and 255 invalid padding(s).
 And so on and so on.
 
 ## More challenging ciphertexts
-With the default key (all 0), try this ciphertext: `8b 85 b4 13 d5 d8 e5 41  a6 bc 34 5a 56 0c 32 b9`
+With the default key (all 0), try this ciphertext: `8b 85 b4 13 d5 d8 e5 41 a6 bc 34 5a 56 0c 32 b9`
+
+To check your effectiveness of validating/confirming that you've found the
+correct byte by inverting the byte before, use this block:
+`64 66 70 2e 1d c0 96 ed 77 34 77 9c 83 55 56 02`
 
 You can simply do this by using the `-C` command line option.
 
