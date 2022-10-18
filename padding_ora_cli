@@ -28,7 +28,7 @@ import cryptography.hazmat.primitives.ciphers.modes
 import cryptography.hazmat.primitives.padding
 from FriendlyArgumentParser import FriendlyArgumentParser
 
-parser = FriendlyArgumentParser(description = "PKCS#7 padding oracle commandl line interface.")
+parser = FriendlyArgumentParser(description = "PKCS#7 padding oracle command line interface.")
 parser.add_argument("-K", "--key", metavar = "key", default = "00000000000000000000000000000000", help = "AES-128 key to assume. Must be a hex-encoded 16 byte value. Defaults to %(default)s.")
 parser.add_argument("-C", "--ciphertext", metavar = "key", default = "560c911fa8cfd3fac3bb4d9f97d03464", help = "Ciphertext to assume. Must be a hex-encoded 16 byte value. Defaults to %(default)s.")
 parser.add_argument("-v", "--verbose", action = "count", default = 0, help = "Increases verbosity. Can be specified multiple times to increase.")
