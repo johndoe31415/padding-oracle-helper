@@ -42,7 +42,7 @@ class PaddingOracleCLI():
 
 		self._invalid = 0
 		self._valid = 0
-		cipher = cryptography.hazmat.primitives.ciphers.Cipher(cryptography.hazmat.primitives.ciphers.algorithms.AES(self._key), cryptography.hazmat.primitives.ciphers.modes.ECB())
+		cipher = cryptography.hazmat.primitives.ciphers.Cipher(cryptography.hazmat.primitives.ciphers.algorithms.AES(self._key), cryptography.hazmat.primitives.ciphers.modes.ECB(), backend=cryptography.hazmat.backends.default_backend())
 		decryptor = cipher.decryptor()
 		ciphertext = bytes.fromhex(self._args.ciphertext)
 		self._plaintext = decryptor.update(ciphertext) + decryptor.finalize()
