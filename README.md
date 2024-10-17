@@ -1,5 +1,5 @@
 # padding-oracle-helper
-This is a small comand line utility that is intended to allow people to study
+This is a small command line utility that is intended to allow people to study
 the behavior of a PKCS#7 CBC padding oracle "by hand". Consider two blocks Q
 and C, where Q is the IV for a CBC-encrypted ciphertext block C. Then Q can be
 given on the command line and the CLI will output if the PKCS#7 padding is
