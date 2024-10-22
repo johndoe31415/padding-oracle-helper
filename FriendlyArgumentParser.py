@@ -52,8 +52,6 @@ def baseint(value, default_base = 10):
 		return int(value, 2)
 	elif value.lower().startswith("0o"):
 		return int(value, 8)
-	elif value.lower().startswith("0b"):
-		return int(value, 2)
 	else:
 		return int(value, default_base)
 
